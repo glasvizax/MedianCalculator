@@ -1,0 +1,1 @@
+cmake -B build -S . -DBoost_DIR="%YOUR_PATH_TO_BoostConfig.cmake%"
