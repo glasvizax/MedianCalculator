@@ -18,6 +18,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${RELEASE_BIN_DIR})
 
 set(Boost_DIR "" CACHE PATH "path to Boost config file")
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
 
 FetchContent_Declare(
@@ -61,6 +63,9 @@ add_library(
     STATIC
     src/Logging.h 
     src/Logging.cpp
+    src/TomlConfigHandler.h 
+    src/TomlConfigHandler.cpp 
+
     _toml_impl.cpp
     $<$<BOOL:USE_PCH>:src/default_pch.h>
 )
@@ -141,6 +146,13 @@ set_target_properties(Main PROPERTIES
 
 set(TEST_MedianCalculator TRUE CACHE BOOL "turn off to drop tests")
 
+get_target_property(_main_src Main SOURCES)
+get_target_property(_core_src Core SOURCES)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${_main_src})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${_core_src})
+
+set_target_properties(spdlog PROPERTIES FOLDER ExternalLibs)
+
 if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     enable_testing()
     FetchContent_Declare(
@@ -182,5 +194,10 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
         PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Test>"
     )
+
+    get_target_property(_test_src Test SOURCES)
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${_test_src})
+
+    set_target_properties(gtest_main gtest PROPERTIES FOLDER ExternalLibs)
 
 endif()
