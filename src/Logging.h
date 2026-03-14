@@ -26,7 +26,7 @@ SinkPtr addSink()
     return sink;
 }
 
-void initLogger();
+void initDefaultLogger();
 
 class LoggerGuard
 {

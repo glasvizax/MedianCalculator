@@ -6,7 +6,7 @@ LoggerPtr addLogger(const std::string& name)
     return logger;
 }
 
-void initLogger()
+void initDefaultLogger()
 {
     LoggerPtr default_logger = addLogger("default logger");
     SinkPtr default_sink = addSink<spdlog::sinks::stdout_color_sink_mt>();
