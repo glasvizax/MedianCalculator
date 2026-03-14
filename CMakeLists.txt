@@ -10,6 +10,12 @@ project(MedianCalculator VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+set(DEBUG_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/Debug)
+set(RELEASE_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/Release)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DEBUG_BIN_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${RELEASE_BIN_DIR})
+
 set(Boost_DIR "" CACHE PATH "path to Boost config file")
 
 find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
@@ -37,39 +43,71 @@ FetchContent_MakeAvailable(
     spdlog 
 )
 
-set(_mc_sources 
-    src/Logging.h 
-    src/Logging.cpp
-)
+# -- Core -- 
 
 set(USE_PCH FALSE CACHE BOOL "turn on to use pch")
 
-add_library(Core STATIC ${_mc_sources} $<$<BOOL:USE_PCH>:src/default_pch.h>)
+add_library(Core STATIC 
+    src/Logging.h 
+    src/Logging.cpp
+
+    $<$<BOOL:USE_PCH>:src/default_pch.h>
+)
 
 target_link_libraries(Core 
     PUBLIC 
-    Boost::program_options 
-    spdlog::spdlog 
-    tomlplusplus::tomlplusplus
+        Boost::program_options 
+        spdlog::spdlog 
+        tomlplusplus::tomlplusplus
 )
 
-target_include_directories(Core PUBLIC src)
+target_include_directories(Core 
+    PUBLIC 
+        src
+)
 
 target_precompile_headers(Core 
     PUBLIC 
-    $<$<BOOL:USE_PCH>:"default_pch.h">
+        $<$<BOOL:USE_PCH>:"default_pch.h">
+)
+
+# -- Main -- 
+
+file(GLOB_RECURSE 
+    _toml_files 
+    CONFIGURE_DEPENDS
+    data/*.toml
 )
 
 add_executable(Main 
     src/main.cpp 
+    ${_toml_files}
 )
 
 target_link_libraries(Main 
     PRIVATE 
+        Core
+)
+
+target_precompile_headers(Main 
+    REUSE_FROM 
     Core
 )
 
-target_precompile_headers(Main REUSE_FROM Core)
+add_custom_command(
+    TARGET Main
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_toml_files} $<IF:$<CONFIG:Debug>,${DEBUG_BIN_DIR},${RELEASE_BIN_DIR}> 
+    COMMENT "copying all toml files..."
+    VERBATIM
+    COMMAND_EXPAND_LISTS
+)
+
+set_target_properties(Main PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Main>"
+)
+
+# -- Tests -- 
 
 set(TEST_MedianCalculator TRUE CACHE BOOL "turn off to drop tests")
 
@@ -90,10 +128,12 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
 
     target_include_directories(Test PRIVATE test)
 
-    target_link_libraries(Test PRIVATE 
-        GTest::gtest_main 
-        GTest::gtest
-        Core
+    target_link_libraries(
+        Test 
+        PRIVATE 
+            GTest::gtest_main 
+            GTest::gtest
+            Core
     )
 
     include(GoogleTest)
@@ -105,6 +145,10 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     target_precompile_headers(Test 
         REUSE_FROM 
         Core
+    )
+
+    set_target_properties(Test PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Test>"
     )
 
 endif()
