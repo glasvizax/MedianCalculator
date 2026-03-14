@@ -45,30 +45,58 @@ FetchContent_MakeAvailable(
 
 # -- Core -- 
 
+file(GENERATE OUTPUT _toml_impl.cpp
+     CONTENT [=[
+#define TOML_HEADER_ONLY 0
+#define TOML_IMPLEMENTATION
+#define TOML_ENABLE_FORMATTERS 0
+#include <toml++/toml.hpp>
+     ]=]
+)
+
 set(USE_PCH FALSE CACHE BOOL "turn on to use pch")
 
-add_library(Core STATIC 
+add_library(
+    Core 
+    STATIC
     src/Logging.h 
     src/Logging.cpp
-
+    _toml_impl.cpp
     $<$<BOOL:USE_PCH>:src/default_pch.h>
 )
 
-target_link_libraries(Core 
+target_link_libraries(
+    Core 
     PUBLIC 
         Boost::program_options 
         spdlog::spdlog 
         tomlplusplus::tomlplusplus
 )
 
-target_include_directories(Core 
+target_include_directories(
+    Core 
     PUBLIC 
         src
 )
 
-target_precompile_headers(Core 
+target_precompile_headers(
+    Core 
     PUBLIC 
         $<$<BOOL:USE_PCH>:"default_pch.h">
+)
+
+target_compile_definitions(
+    Core 
+    PUBLIC 
+        TOML_EXCEPTIONS=0
+        TOML_HEADER_ONLY=0
+        TOML_ENABLE_FORMATTERS=0
+)
+
+set_source_files_properties(
+    _toml_impl.cpp
+    PROPERTIES 
+        SKIP_PRECOMPILE_HEADERS TRUE
 )
 
 # -- Main -- 
@@ -79,12 +107,14 @@ file(GLOB_RECURSE
     data/*.toml
 )
 
-add_executable(Main 
+add_executable(
+    Main 
     src/main.cpp 
     ${_toml_files}
 )
 
-target_link_libraries(Main 
+target_link_libraries(
+    Main 
     PRIVATE 
         Core
 )
@@ -147,7 +177,9 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
         Core
     )
 
-    set_target_properties(Test PROPERTIES
+    set_target_properties(
+        Test 
+        PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Test>"
     )
 
