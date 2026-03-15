@@ -96,6 +96,8 @@ target_compile_definitions(
         TOML_EXCEPTIONS=0
         TOML_HEADER_ONLY=0
         TOML_ENABLE_FORMATTERS=0
+
+        SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
 )
 
 set_source_files_properties(

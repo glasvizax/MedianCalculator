@@ -2,43 +2,15 @@
 
 #include <spdlog/spdlog.h>
 
-using LoggerPtr = std::shared_ptr<spdlog::logger>;
-using SinkPtr = spdlog::sink_ptr;
+extern std::shared_ptr<spdlog::logger> g_stdout_logger;
+extern std::shared_ptr<spdlog::logger> g_stderr_logger;
 
-//TODO : pick the right allocator class
-template<typename T>
-using Allocator = std::allocator<T>;
+void initDefaultLoggers();
 
-using LoggersAllocator = Allocator<LoggerPtr>;
-using SinksAllocator = Allocator<SinkPtr>;
-
-namespace {
-    LoggersAllocator g_loggers_allocator;
-    SinksAllocator g_sinks_allocator;
-}
-
-LoggerPtr addLogger(const std::string& name);
-
-template<typename SinkType>
-SinkPtr addSink()
-{
-    SinkPtr sink = std::allocate_shared<SinkType>(g_sinks_allocator);
-    return sink;
-}
-
-void initDefaultLogger();
-
-class LoggerGuard
-{
-private:
-    LoggerPtr m_prev_logger;
-public:
-    explicit LoggerGuard(LoggerPtr new_logger);
-    LoggerGuard(const LoggerGuard&) = delete;
-    LoggerGuard(LoggerGuard&&) = delete;
-    void operator=(LoggerGuard&&) = delete;
-    void operator=(const LoggerGuard&) = delete;
-
-    ~LoggerGuard() noexcept;
-};
+#define LOG_TRACE(_msg_) SPDLOG_LOGGER_TRACE(g_stdout_logger, _msg_);
+#define LOG_DEBUG(_msg_) SPDLOG_LOGGER_DEBUG(g_stdout_logger, _msg_);
+#define LOG_INFO(_msg_) SPDLOG_LOGGER_INFO(g_stdout_logger, _msg_);
+#define LOG_WARN(_msg_) SPDLOG_LOGGER_WARN(g_stderr_logger, _msg_);
+#define LOG_ERROR(_msg_) SPDLOG_LOGGER_ERROR(g_stderr_logger, _msg_);
+#define LOG_CRITICAL(_msg_) SPDLOG_LOGGER_CRITICAL(g_stderr_logger, _msg_);
 

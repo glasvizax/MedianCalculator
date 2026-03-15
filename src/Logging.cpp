@@ -1,34 +1,15 @@
 #include "Logging.h"
 
-LoggerPtr addLogger(const std::string& name)
-{
-    LoggerPtr logger = std::allocate_shared<LoggerPtr::element_type>(g_loggers_allocator, name);
-    return logger;
-}
+constexpr const char* LOG_PATTERN = "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] [%s:%#] %v";
 
-void initDefaultLogger()
-{
-    LoggerPtr default_logger = addLogger("default logger");
-    SinkPtr default_sink = addSink<spdlog::sinks::stdout_color_sink_mt>();
+std::shared_ptr<spdlog::logger> g_stdout_logger;
+std::shared_ptr<spdlog::logger> g_stderr_logger;
 
-    default_logger->sinks().push_back(default_sink);
-    spdlog::set_default_logger(default_logger);
-}
-
-LoggerGuard::LoggerGuard(LoggerPtr new_logger)
+void initDefaultLoggers()
 {
-    if (new_logger)
-    {
-        m_prev_logger = spdlog::default_logger();
-        spdlog::set_default_logger(new_logger);
-    }
-    else
-    {
-        spdlog::error("new_loger is null pointer");
-    }
-}
+	g_stdout_logger = spdlog::stdout_color_mt("stdout_logger");
+	g_stderr_logger = spdlog::stderr_color_mt("stderr_logger");
 
-LoggerGuard::~LoggerGuard() noexcept
-{
-    spdlog::set_default_logger(m_prev_logger);
+	g_stdout_logger->set_pattern(LOG_PATTERN);
+	g_stderr_logger->set_pattern(LOG_PATTERN);
 }

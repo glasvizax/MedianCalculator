@@ -8,12 +8,15 @@
 
 #include <iostream>
 
+#include "Logging.h"
+
 namespace po = boost::program_options;
+using namespace std::string_view_literals;
 
 int main(int argc, char** argv)
 {
-    initLogger();
-    
-    spdlog::warn("hello");
+    initDefaultLoggers();
+
+    LOG_CRITICAL("error 2");
 }
 
