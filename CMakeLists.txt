@@ -44,7 +44,6 @@ FetchContent_MakeAvailable(
     tomlplusplus 
     spdlog 
 )
-
 # -- Core -- 
 
 file(GENERATE OUTPUT _toml_impl.cpp
@@ -63,8 +62,8 @@ add_library(
     STATIC
     src/Logging.h 
     src/Logging.cpp
-    src/TomlConfigHandler.h 
-    src/TomlConfigHandler.cpp 
+    src/Config.h 
+    src/Config.cpp 
 
     _toml_impl.cpp
     $<$<BOOL:USE_PCH>:src/default_pch.h>
@@ -168,14 +167,17 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
         googletest
     )
     
-    add_executable(Test test/test1.cpp)
+    add_executable(
+        Test 
+        test/ConfigTests.cpp
+        test/test_main.cpp
+    )
 
     target_include_directories(Test PRIVATE test)
 
     target_link_libraries(
         Test 
         PRIVATE 
-            GTest::gtest_main 
             GTest::gtest
             Core
     )
@@ -201,5 +203,13 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${_test_src})
 
     set_target_properties(gtest_main gtest PROPERTIES FOLDER ExternalLibs)
+
+    set(TESTS_DROP_LOGGING FALSE CACHE BOOL "turn on to drop logging in tests")
+
+    target_compile_definitions(
+        Test 
+        PRIVATE
+            $<$<BOOL:${TESTS_DROP_LOGGING}>:DROP_LOGGING>
+    )
 
 endif()
