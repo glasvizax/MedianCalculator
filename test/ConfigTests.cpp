@@ -96,3 +96,102 @@ TEST(TomlConfigProcessing, WrongFilenameMaskParamTest2)
 	ASSERT_EQ(res->m_input, "input_dir");
 	ASSERT_EQ(res->m_filename_masks[0], "mask1");
 }
+
+TEST(ArgvProcessingForConfigPath, ArgumentConfigTest)
+{
+	const char* argv[] = { 
+		"test", 
+		"-config", 
+		"foo.toml", 
+	};
+	int argc = sizeof(argv) / sizeof(char*);
+
+	bool error;
+	fs::path path = parseArgvForConfigPath(argc, argv, error);
+	
+	ASSERT_FALSE(error);
+	ASSERT_TRUE(fs::equivalent(path, "foo.toml"));
+}
+
+TEST(ArgvProcessingForConfigPath, ArgumentCfgTest)
+{
+	const char* argv[] = {
+		"test",
+		"-cfg",
+		"foo.toml",
+	};
+	int argc = sizeof(argv) / sizeof(char*);
+
+	bool error;
+	fs::path path = parseArgvForConfigPath(argc, argv, error);
+
+	ASSERT_FALSE(error);
+	ASSERT_TRUE(fs::equivalent(path, "foo.toml"));
+}
+
+TEST(ArgvProcessingForConfigPath, ArgumentDoubleDashConfigTest)
+{
+	const char* argv[] = {
+		"test",
+		"--config",
+		"foo.toml",
+	};
+	int argc = sizeof(argv) / sizeof(char*);
+
+	bool error;
+	fs::path path = parseArgvForConfigPath(argc, argv, error);
+
+	ASSERT_TRUE(error);
+	ASSERT_TRUE(path.empty());
+}
+
+TEST(ArgvProcessingForConfigPath, ArgumentDoubleDashCfgTest)
+{
+	const char* argv[] = {
+		"test",
+		"--cfg",
+		"foo.toml",
+	};
+	int argc = sizeof(argv) / sizeof(char*);
+
+	bool error;
+	fs::path path = parseArgvForConfigPath(argc, argv, error);
+
+	ASSERT_TRUE(error);
+	ASSERT_TRUE(path.empty());
+}
+
+TEST(ArgvProcessingForConfigPath, ArgumentConfigAndCfgTest)
+{
+	const char* argv[] = {
+		"test",
+		"-config",
+		"foo.toml",
+		"-cfg",
+		"bar.toml",
+	};
+
+	int argc = sizeof(argv) / sizeof(char*);
+
+	bool error;
+	fs::path path = parseArgvForConfigPath(argc, argv, error);
+
+	ASSERT_TRUE(error);
+	ASSERT_TRUE(path.empty());
+}
+
+TEST(ArgvProcessingForConfigPath, ArgumentUnknownTest)
+{
+	const char* argv[] = {
+		"test",
+		"-abcdef",
+		"foo.toml",
+	};
+	int argc = sizeof(argv) / sizeof(char*);
+
+	bool error;
+	fs::path path = parseArgvForConfigPath(argc, argv, error);
+
+	ASSERT_TRUE(error);
+	ASSERT_TRUE(path.empty());
+}

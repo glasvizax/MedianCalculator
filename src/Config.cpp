@@ -1,8 +1,8 @@
 #include "Config.h"
 
-std::optional<ConfigParameters> processTomlFile(const std::string& file)
+std::optional<ConfigParameters> processTomlFile(const fs::path& file)
 {
-	toml::parse_result res = toml::parse_file(file);
+	toml::parse_result res = toml::parse_file(file.generic_string());
 
 	if (res.failed())
 	{
@@ -98,3 +98,100 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 
 	return config_params;
 }
+
+fs::path parseArgvForConfigPath(int argc, const char const* const* argv, bool& error)
+{
+	fs::path config_path;
+
+	try
+	{
+		po::options_description desc;
+
+		desc.add_options()
+			("config", po::value<fs::path>(), "toml config file path")
+			("cfg", po::value<fs::path>(), "short version of config");
+
+		// allow only for args of type [-arg val]
+		int style = (po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~(po::command_line_style::allow_guessing | po::command_line_style::allow_long);
+		po::command_line_parser parser(argc, argv);
+		parser.options(desc).style(style).allow_unregistered();
+
+		po::parsed_options parse_result = parser.run();
+
+		if (!parse_result.options.empty())
+		{
+			auto unrec = po::collect_unrecognized(parse_result.options, po::collect_unrecognized_mode::include_positional);
+			// if received one unregistered or options given more than 1
+			if (parse_result.options.size() > 1 || unrec.size())
+			{
+				LOG_ERROR("It can only be either [-cfg path_to_toml_file] or [-config path_to_toml_file]");
+				error = true;
+				return config_path;
+			}
+
+			po::variables_map vm;
+			po::store(parse_result, vm);
+			po::notify(vm);
+
+			if (auto it = vm.find(parse_result.options[0].string_key); it != vm.end())
+			{
+				boost::any& any = it->second.value();
+				fs::path* cast_res = boost::any_cast<fs::path>(&any);
+				if (!cast_res)
+				{
+					LOG_CRITICAL("incorrect config file name");
+					error = true;
+					return config_path;
+				}
+
+				config_path = std::move(*cast_res);
+			}
+		}
+	}
+	catch (std::exception& e)
+	{
+		LOG_CRITICAL("parse error: {}", e.what());
+		error = true;
+		return config_path;
+	}
+
+	error = false;
+	return config_path;
+}
+
+fs::path getConfigFile(int argc, const char const* const* argv)
+{
+	bool parse_error;
+	fs::path config_file = parseArgvForConfigPath(argc, argv, parse_error);
+
+	if(parse_error)
+	{
+		std::exit(EXIT_FAILURE);
+	}
+
+	if (config_file.empty())
+	{
+		config_file = fs::current_path() / "config.toml";
+	}
+
+	std::error_code err_code;
+
+	bool exist = fs::exists(config_file, err_code);
+
+	if (err_code)
+	{
+		LOG_CRITICAL(err_code.message());
+		std::exit(EXIT_FAILURE);
+	}
+	 
+	if (!exist)
+	{
+		LOG_CRITICAL("can't find file {}", config_file.generic_string());
+		std::exit(EXIT_FAILURE);
+	}
+
+	LOG_INFO("config file path = {}", config_file.generic_string());
+
+	return config_file;
+}
+
