@@ -7,7 +7,7 @@ std::optional<ConfigParameters> processTomlFile(const fs::path& file)
 	if (res.failed())
 	{
 		LOG_ERROR(res.error().description());
-		return std::optional<ConfigParameters>(std::nullopt);
+		return std::nullopt;
 	}
 
 	return processTomlTable(std::move(res).table());
@@ -20,7 +20,7 @@ std::optional<ConfigParameters> processTomlString(const std::string& toml_str)
 	if (res.failed())
 	{
 		LOG_ERROR(res.error().description());
-		return std::optional<ConfigParameters>(std::nullopt);
+		return std::nullopt;
 	}
 
 	return processTomlTable(std::move(res).table());
@@ -33,7 +33,7 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 	if (!input || !input.is_string())
 	{
 		LOG_ERROR("\"input\ = \'dir_to_search_csv_files\'\" must be specified as string");
-		return std::optional<ConfigParameters>(std::nullopt);
+		return std::nullopt;
 	}
 
 	std::optional<ConfigParameters> config_params;
@@ -50,7 +50,7 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 	{
 		if (!output.is_string())
 		{
-			LOG_WARN("\"output\ = \'dir_for_result_csv_file\'\" must be specified as string");
+			LOG_ERROR("\"output\ = \'dir_for_result_csv_file\'\" must be specified as string");
 			config_params->m_output = "output";
 		}
 		else
@@ -99,7 +99,7 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 	return config_params;
 }
 
-fs::path parseArgvForConfigPath(int argc, const char const* const* argv, bool& error)
+std::optional<fs::path> parseArgvForConfigPath(int argc, const char const* const* argv)
 {
 	fs::path config_path;
 
@@ -125,8 +125,7 @@ fs::path parseArgvForConfigPath(int argc, const char const* const* argv, bool& e
 			if (parse_result.options.size() > 1 || unrec.size())
 			{
 				LOG_ERROR("It can only be either [-cfg path_to_toml_file] or [-config path_to_toml_file]");
-				error = true;
-				return config_path;
+				return std::nullopt;
 			}
 
 			po::variables_map vm;
@@ -140,8 +139,7 @@ fs::path parseArgvForConfigPath(int argc, const char const* const* argv, bool& e
 				if (!cast_res)
 				{
 					LOG_CRITICAL("incorrect config file name");
-					error = true;
-					return config_path;
+					return std::nullopt;
 				}
 
 				config_path = std::move(*cast_res);
@@ -151,32 +149,29 @@ fs::path parseArgvForConfigPath(int argc, const char const* const* argv, bool& e
 	catch (std::exception& e)
 	{
 		LOG_CRITICAL("parse error: {}", e.what());
-		error = true;
-		return config_path;
+		return std::nullopt;
 	}
 
-	error = false;
 	return config_path;
 }
 
 fs::path getConfigFile(int argc, const char const* const* argv)
 {
-	bool parse_error;
-	fs::path config_file = parseArgvForConfigPath(argc, argv, parse_error);
-
-	if(parse_error)
+	std::optional<fs::path> config_file = parseArgvForConfigPath(argc, argv);
+	
+	if(config_file == std::nullopt)
 	{
 		std::exit(EXIT_FAILURE);
 	}
 
-	if (config_file.empty())
+	if (config_file->empty())
 	{
 		config_file = fs::current_path() / "config.toml";
 	}
 
 	std::error_code err_code;
 
-	bool exist = fs::exists(config_file, err_code);
+	bool exist = fs::exists(*config_file, err_code);
 
 	if (err_code)
 	{
@@ -186,12 +181,12 @@ fs::path getConfigFile(int argc, const char const* const* argv)
 	 
 	if (!exist)
 	{
-		LOG_CRITICAL("can't find file {}", config_file.generic_string());
+		LOG_CRITICAL("can't find file {}", config_file->generic_string());
 		std::exit(EXIT_FAILURE);
 	}
 
-	LOG_INFO("config file path = {}", config_file.generic_string());
+	LOG_INFO("config file path = {}", config_file->generic_string());
 
-	return config_file;
+	return *config_file;
 }
 

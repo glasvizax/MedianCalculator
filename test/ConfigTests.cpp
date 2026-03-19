@@ -107,10 +107,10 @@ TEST(ArgvProcessingForConfigPath, ArgumentConfigTest)
 	int argc = sizeof(argv) / sizeof(char*);
 
 	bool error;
-	fs::path path = parseArgvForConfigPath(argc, argv, error);
+	std::optional<fs::path> path = parseArgvForConfigPath(argc, argv);
 	
-	ASSERT_FALSE(error);
-	ASSERT_TRUE(fs::equivalent(path, "foo.toml"));
+	ASSERT_NE(path, std::nullopt);
+	ASSERT_TRUE(fs::equivalent(*path, "foo.toml"));
 }
 
 TEST(ArgvProcessingForConfigPath, ArgumentCfgTest)
@@ -122,11 +122,10 @@ TEST(ArgvProcessingForConfigPath, ArgumentCfgTest)
 	};
 	int argc = sizeof(argv) / sizeof(char*);
 
-	bool error;
-	fs::path path = parseArgvForConfigPath(argc, argv, error);
+	std::optional<fs::path> path = parseArgvForConfigPath(argc, argv);
 
-	ASSERT_FALSE(error);
-	ASSERT_TRUE(fs::equivalent(path, "foo.toml"));
+	ASSERT_NE(path, std::nullopt);
+	ASSERT_TRUE(fs::equivalent(*path, "foo.toml"));
 }
 
 TEST(ArgvProcessingForConfigPath, ArgumentDoubleDashConfigTest)
@@ -138,11 +137,9 @@ TEST(ArgvProcessingForConfigPath, ArgumentDoubleDashConfigTest)
 	};
 	int argc = sizeof(argv) / sizeof(char*);
 
-	bool error;
-	fs::path path = parseArgvForConfigPath(argc, argv, error);
+	std::optional<fs::path> path = parseArgvForConfigPath(argc, argv);
 
-	ASSERT_TRUE(error);
-	ASSERT_TRUE(path.empty());
+	ASSERT_EQ(path, std::nullopt);
 }
 
 TEST(ArgvProcessingForConfigPath, ArgumentDoubleDashCfgTest)
@@ -155,10 +152,9 @@ TEST(ArgvProcessingForConfigPath, ArgumentDoubleDashCfgTest)
 	int argc = sizeof(argv) / sizeof(char*);
 
 	bool error;
-	fs::path path = parseArgvForConfigPath(argc, argv, error);
+	std::optional<fs::path> path = parseArgvForConfigPath(argc, argv);
 
-	ASSERT_TRUE(error);
-	ASSERT_TRUE(path.empty());
+	ASSERT_EQ(path, std::nullopt);
 }
 
 TEST(ArgvProcessingForConfigPath, ArgumentConfigAndCfgTest)
@@ -173,11 +169,9 @@ TEST(ArgvProcessingForConfigPath, ArgumentConfigAndCfgTest)
 
 	int argc = sizeof(argv) / sizeof(char*);
 
-	bool error;
-	fs::path path = parseArgvForConfigPath(argc, argv, error);
+	std::optional<fs::path> path = parseArgvForConfigPath(argc, argv);
 
-	ASSERT_TRUE(error);
-	ASSERT_TRUE(path.empty());
+	ASSERT_EQ(path, std::nullopt);
 }
 
 TEST(ArgvProcessingForConfigPath, ArgumentUnknownTest)
@@ -189,9 +183,7 @@ TEST(ArgvProcessingForConfigPath, ArgumentUnknownTest)
 	};
 	int argc = sizeof(argv) / sizeof(char*);
 
-	bool error;
-	fs::path path = parseArgvForConfigPath(argc, argv, error);
+	std::optional<fs::path> path = parseArgvForConfigPath(argc, argv);
 
-	ASSERT_TRUE(error);
-	ASSERT_TRUE(path.empty());
+	ASSERT_EQ(path, std::nullopt);
 }
