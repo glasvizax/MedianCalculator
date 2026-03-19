@@ -51,7 +51,7 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 		if (!output.is_string())
 		{
 			LOG_ERROR("\"output\ = \'dir_for_result_csv_file\'\" must be specified as string");
-			config_params->m_output = "output";
+			return std::nullopt;
 		}
 		else
 		{
@@ -65,17 +65,8 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 	{
 		if (!filename_masks.is_array())
 		{
-			LOG_WARN("\"filename_masks\" must be an array");
-
-			if (!filename_masks.is_string())
-			{
-				LOG_WARN("\"filename_masks\" must contain strings");
-
-			}
-			else
-			{
-				config_params->m_filename_masks.emplace_back(std::move(filename_masks.ref<std::string>()));
-			}
+			LOG_ERROR("\"filename_masks\" must be an array");
+			return std::nullopt;
 		}
 		else
 		{
@@ -87,8 +78,8 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 			{
 				if (!el.is_string())
 				{
-					LOG_WARN("\"filename_masks\" must contain strings");
-					continue;
+					LOG_ERROR("\"filename_masks\" must contain strings");
+					return std::nullopt;
 				}
 
 				config_params->m_filename_masks.emplace_back(std::move(el.ref<std::string>()));
