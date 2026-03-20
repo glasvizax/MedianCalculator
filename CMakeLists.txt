@@ -65,6 +65,8 @@ add_library(
     src/Logging.cpp
     src/Config.h 
     src/Config.cpp 
+    src/Misc.h 
+    src/Misc.cpp
 
     _toml_impl.cpp
     $<$<BOOL:USE_PCH>:src/default_pch.h>
@@ -178,6 +180,7 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     add_executable(
         Test 
         test/ConfigTests.cpp
+        test/MiscTests.cpp
         test/test_main.cpp
     )
 

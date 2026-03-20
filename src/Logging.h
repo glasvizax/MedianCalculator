@@ -13,3 +13,5 @@ void initDefaultLoggers();
 #define LOG_WARN(...) SPDLOG_LOGGER_WARN(g_stderr_logger, __VA_ARGS__);
 #define LOG_ERROR(...) SPDLOG_LOGGER_ERROR(g_stderr_logger, __VA_ARGS__);
 #define LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(g_stderr_logger, __VA_ARGS__);
+
+#define ERRCODE_AUTOLOG(var) do {if(var) { LOG_CRITICAL(var.message()); std::exit(EXIT_FAILURE); }} while(0)

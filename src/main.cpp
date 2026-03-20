@@ -9,14 +9,17 @@
 #include <iostream>
 
 #include "Logging.h"
+#include "Config.h"
+#include "Misc.h"
 
-namespace po = boost::program_options;
-using namespace std::string_view_literals;
+namespace fs = std::filesystem;
 
 int main(int argc, char** argv)
 {
     initDefaultLoggers();
+    
+    ConfigParams config_params = receiveConfigParams(argc, argv);
+    auto res = findMatchingCsvFiles(std::move(config_params));
 
-    LOG_CRITICAL("error 2");
+    LOG_INFO("{}", res.size());
 }
-

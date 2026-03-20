@@ -1,12 +1,8 @@
 
 [main]
-# Путь к директории с входными CSV-файлами
-input = '/path/to/input_dir'
-   
-# Путь к директории для выходных CSV-файлов
-# Если не указан, создается директория 'output' рядом с приложением
-output = '/path/to/output_dir'
-   
-# Список масок имен файлов для фильтрации
-# Если список пустой, читаются все CSV-файлы из директории
-filename_mask = ['level', 'trade']
+input = '.'
+
+output = 'output_dir'
+
+filename_mask = ['dat']  
+
