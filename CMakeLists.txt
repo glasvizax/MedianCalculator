@@ -44,6 +44,7 @@ FetchContent_MakeAvailable(
     tomlplusplus 
     spdlog 
 )
+
 # -- Core -- 
 
 file(GENERATE OUTPUT _toml_impl.cpp
@@ -108,15 +109,14 @@ set_source_files_properties(
 # -- Main -- 
 
 file(GLOB_RECURSE 
-    _toml_files 
+    _data_files 
     CONFIGURE_DEPENDS
-    data/*.toml
+    data/* 
 )
 
 add_executable(
     Main 
     src/main.cpp 
-    ${_toml_files}
 )
 
 target_link_libraries(
@@ -125,22 +125,27 @@ target_link_libraries(
         Core
 )
 
-target_precompile_headers(Main 
+target_precompile_headers(
+    Main 
     REUSE_FROM 
     Core
 )
 
-add_custom_command(
-    TARGET Main
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_toml_files} $<IF:$<CONFIG:Debug>,${DEBUG_BIN_DIR},${RELEASE_BIN_DIR}> 
+add_custom_target(
+    CopyData 
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_data_files} $<IF:$<CONFIG:Debug>,${DEBUG_BIN_DIR},${RELEASE_BIN_DIR}> 
+    DEPENDS ${_data_files}
     COMMENT "copying all toml files..."
-    VERBATIM
+    VERBATIM 
     COMMAND_EXPAND_LISTS
+    SOURCES ${_data_files}
 )
 
-set_target_properties(Main PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Main>"
+set_target_properties(
+    Main 
+    PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Main>"
+        VS_DEBUGGER_COMMAND_ARGUMENTS "-cfg foo.toml"
 )
 
 # -- Tests -- 
@@ -155,7 +160,9 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${_core_src})
 set_target_properties(spdlog PROPERTIES FOLDER ExternalLibs)
 
 if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
+    include(GoogleTest)   
     enable_testing()
+
     FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
@@ -166,7 +173,8 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     FetchContent_MakeAvailable(
         googletest
     )
-    
+
+        
     add_executable(
         Test 
         test/ConfigTests.cpp
@@ -182,7 +190,7 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
             Core
     )
 
-    include(GoogleTest)
+   
     gtest_discover_tests(
         Test
         DISCOVERY_MODE PRE_TEST
@@ -196,7 +204,7 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     set_target_properties(
         Test 
         PROPERTIES
-        VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Test>"
+            VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Test>"
     )
 
     get_target_property(_test_src Test SOURCES)
@@ -213,3 +221,4 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     )
 
 endif()
+
