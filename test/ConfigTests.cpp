@@ -33,9 +33,26 @@ TEST(TomlConfigProcessing, OnlyRequiredParams)
 	ASSERT_NE(res, std::nullopt);
 
 	ASSERT_EQ(res->m_input, "input_dir");
-	ASSERT_EQ(res->m_output, "output");
+	ASSERT_TRUE(res->m_output.empty());
 	ASSERT_EQ(res->m_filename_masks.size(), 0);
 }
+
+TEST(TomlConfigProcessing, InputOutputOnlyParamsTest)
+{
+	std::string config = R"(
+	[main]
+	input = 'input_dir'
+	output = 'output_dir'
+	)";
+
+	auto res = processTomlString(config);
+
+	ASSERT_NE(res, std::nullopt);
+
+	ASSERT_EQ(res->m_input, "input_dir");
+	ASSERT_EQ(res->m_output, "output_dir");
+}
+
 
 TEST(TomlConfigProcessing, WrongInputParamTest)
 {
@@ -59,10 +76,7 @@ TEST(TomlConfigProcessing, WrongOutputParamTest)
 
 	auto res = processTomlString(config);
 
-	ASSERT_NE(res, std::nullopt);
-
-	ASSERT_EQ(res->m_input, "input_dir");
-	ASSERT_EQ(res->m_output, "output");
+	ASSERT_EQ(res, std::nullopt);
 }
 
 TEST(TomlConfigProcessing, WrongFilenameMaskParamTest1)
@@ -75,10 +89,7 @@ TEST(TomlConfigProcessing, WrongFilenameMaskParamTest1)
 
 	auto res = processTomlString(config);
 
-	ASSERT_NE(res, std::nullopt);
-
-	ASSERT_EQ(res->m_input, "input_dir");
-	ASSERT_EQ(res->m_filename_masks.size(), 0);
+	ASSERT_EQ(res, std::nullopt);
 }
 
 TEST(TomlConfigProcessing, WrongFilenameMaskParamTest2)
@@ -91,10 +102,7 @@ TEST(TomlConfigProcessing, WrongFilenameMaskParamTest2)
 
 	auto res = processTomlString(config);
 
-	ASSERT_NE(res, std::nullopt);
-
-	ASSERT_EQ(res->m_input, "input_dir");
-	ASSERT_EQ(res->m_filename_masks[0], "mask1");
+	ASSERT_EQ(res, std::nullopt);
 }
 
 TEST(ArgvProcessingForConfigPath, ArgumentConfigTest)

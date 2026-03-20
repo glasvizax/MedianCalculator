@@ -1,32 +1,53 @@
 #include "Config.h"
 
-std::optional<ConfigParameters> processTomlFile(const fs::path& file)
+ConfigParams postProcessConfigParams(ConfigParams params)
+{
+	std::error_code errcode;
+	if(params.m_input.is_relative())
+	{
+		params.m_input = fs::absolute(params.m_input, errcode);
+		ERRCODE_AUTOLOG(errcode);
+	}
+
+	if (params.m_output.empty())
+	{
+		params.m_output = fs::current_path() / "output";
+	}
+	else if(params.m_output.is_relative()) 
+	{
+		params.m_output = fs::absolute(params.m_output);
+	}
+
+	return params;
+}
+
+std::optional<ConfigParams> processTomlFile(const fs::path& file)
 {
 	toml::parse_result res = toml::parse_file(file.generic_string());
 
 	if (res.failed())
 	{
-		LOG_ERROR(res.error().description());
+		LOG_CRITICAL(res.error().description());
 		return std::nullopt;
 	}
 
 	return processTomlTable(std::move(res).table());
 }
 
-std::optional<ConfigParameters> processTomlString(const std::string& toml_str)
+std::optional<ConfigParams> processTomlString(const std::string& toml_str)
 {
 	toml::parse_result res = toml::parse(toml_str);
 
 	if (res.failed())
 	{
-		LOG_ERROR(res.error().description());
+		LOG_CRITICAL(res.error().description());
 		return std::nullopt;
 	}
 
 	return processTomlTable(std::move(res).table());
 }
 
-std::optional<ConfigParameters> processTomlTable(toml::table tbl)
+std::optional<ConfigParams> processTomlTable(toml::table tbl)
 {
 	auto input = tbl["main"]["input"];
 
@@ -36,17 +57,13 @@ std::optional<ConfigParameters> processTomlTable(toml::table tbl)
 		return std::nullopt;
 	}
 
-	std::optional<ConfigParameters> config_params;
+	std::optional<ConfigParams> config_params;
 	config_params.emplace();
 
 	config_params->m_input = std::move(input.ref<std::string>());
 
 	auto output = tbl["main"]["output"];
-	if (!output)
-	{
-		config_params->m_output = "output";
-	}
-	else
+	if (output)
 	{
 		if (!output.is_string())
 		{
@@ -129,7 +146,7 @@ std::optional<fs::path> parseArgvForConfigPath(int argc, const char const* const
 				fs::path* cast_res = boost::any_cast<fs::path>(&any);
 				if (!cast_res)
 				{
-					LOG_CRITICAL("incorrect config file name");
+					LOG_ERROR("incorrect config file name");
 					return std::nullopt;
 				}
 
@@ -139,14 +156,14 @@ std::optional<fs::path> parseArgvForConfigPath(int argc, const char const* const
 	}
 	catch (std::exception& e)
 	{
-		LOG_CRITICAL("parse error: {}", e.what());
+		LOG_ERROR("parse error: {}", e.what());
 		return std::nullopt;
 	}
 
 	return config_path;
 }
 
-fs::path getConfigFile(int argc, const char const* const* argv)
+fs::path findTomlConfigFile(int argc, const char const* const* argv)
 {
 	std::optional<fs::path> config_file = parseArgvForConfigPath(argc, argv);
 	
@@ -160,15 +177,11 @@ fs::path getConfigFile(int argc, const char const* const* argv)
 		config_file = fs::current_path() / "config.toml";
 	}
 
-	std::error_code err_code;
+	std::error_code errcode;
 
-	bool exist = fs::exists(*config_file, err_code);
+	bool exist = fs::exists(*config_file, errcode);
 
-	if (err_code)
-	{
-		LOG_CRITICAL(err_code.message());
-		std::exit(EXIT_FAILURE);
-	}
+	ERRCODE_AUTOLOG(errcode);
 	 
 	if (!exist)
 	{
@@ -179,5 +192,21 @@ fs::path getConfigFile(int argc, const char const* const* argv)
 	LOG_INFO("config file path = {}", config_file->generic_string());
 
 	return *config_file;
+}
+
+ConfigParams receiveConfigParams(int argc, const char const* const* argv)
+{
+	fs::path config_file_path = findTomlConfigFile(argc, argv);
+
+	auto config_parameters = processTomlFile(config_file_path);
+
+	if (!config_parameters)
+	{
+		std::exit(EXIT_FAILURE);
+	}
+
+	ConfigParams result_params = postProcessConfigParams(std::move(*config_parameters));
+
+	return result_params;
 }
 
