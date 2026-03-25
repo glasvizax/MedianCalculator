@@ -11,6 +11,7 @@
 #include "Logging.h"
 #include "Config.h"
 #include "Misc.h"
+#include "CsvSetParser.h"
 
 namespace fs = std::filesystem;
 
@@ -19,7 +20,19 @@ int main(int argc, char** argv)
     initDefaultLoggers();
     
     ConfigParams config_params = receiveConfigParams(argc, argv);
-    auto res = findMatchingCsvFiles(std::move(config_params));
+    auto csv_files = findMatchingCsvFiles(std::move(config_params));
 
-    LOG_INFO("{}", res.size());
+    std::sort(csv_files.begin(), csv_files.end());
+    
+    CsvSetParser<std::string, double> parser({"side", "quantity"});
+    auto data_arrays = parser.processCsvFiles(csv_files);
+
+    for(auto& data : data_arrays)
+    {
+        for (auto [r,p] : data)
+        {
+            std::cout << r << "  " << p << std::endl;
+        }
+    }
+
 }

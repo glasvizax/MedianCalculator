@@ -67,6 +67,7 @@ add_library(
     src/Config.cpp 
     src/Misc.h 
     src/Misc.cpp
+    src/CsvSetParser.h
 
     _toml_impl.cpp
     $<$<BOOL:USE_PCH>:src/default_pch.h>
@@ -176,9 +177,9 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
         googletest
     )
 
-        
     add_executable(
         Test 
+        test/CsvSetParserTests.cpp
         test/ConfigTests.cpp
         test/MiscTests.cpp
         test/test_main.cpp
@@ -197,6 +198,7 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
     gtest_discover_tests(
         Test
         DISCOVERY_MODE PRE_TEST
+        TEST_FILTER "CsvSetParserTest.*"
     )
 
     target_precompile_headers(Test 
