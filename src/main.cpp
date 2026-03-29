@@ -12,13 +12,14 @@
 #include "Config.h"
 #include "Misc.h"
 #include "CsvSetParser.h"
+#include "Algorithms.h"
 
 namespace fs = std::filesystem;
 
 int main(int argc, char** argv)
 {
     initDefaultLoggers();
-
+    
     ConfigParams config_params = receiveConfigParams(argc, argv);
     auto csv_files = findMatchingCsvFiles(std::move(config_params));
 
@@ -27,21 +28,40 @@ int main(int argc, char** argv)
     CsvSetParser<unsigned long long, double> parser({ "receive_ts", "price" });
     auto data_array = parser.processCsvFiles(csv_files);
 
-    stableSortDataArray(data_array, 
-        [](auto a, auto b) 
-        { 
-            return std::get<0>(a) < std::get<0>(b); 
+    stableSortDataArray(data_array,
+        [](auto a, auto b)
+        {
+            return std::get<0>(a) < std::get<0>(b);
         }
     );
 
-    for (auto& arr : data_array)
-    {
-        for (auto [r,p] : arr)
+    /*
+    
+    std::queue<...> ...;
+
+    std::condition_variable median_write_cv;
+
+    std::thread write_csv_thread([]()
         {
-            std::cout << r << " " << p << std::endl;
+
+
+
+        });
+    */
+
+    medianDeviationDataArray(data_array,
+        [](auto element)
+        {
+            return std::get<1>(element);
+        },
+        [](auto median_tuple)
+        {
+            std::cout << std::fixed << std::get<1>(median_tuple) << std::endl;
         }
-        std::cout << std::endl;
-    }
+    );
+
+
+    //write_csv_thread.join();
 }
 
 

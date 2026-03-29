@@ -5,11 +5,13 @@
 #include <algorithm>
 
 template <typename... Ts>
-using data_t = std::vector<std::tuple<Ts...>>;
+using data_element_t = std::tuple<Ts...>;
+
+template <typename... Ts>
+using data_t = std::vector<data_element_t<Ts...>>;
 
 template <typename... Ts>
 using data_array_t = std::vector<data_t<Ts...>>;
-
 
 // pred MUST be strict 
 template <typename... Ts, typename Compare>
@@ -158,6 +160,143 @@ void stableSortDataArray(data_array_t<Ts...>& data_arrays, Compare pred)
         while (!data_arrays.empty() && data_arrays.back().empty())
         {
             data_arrays.pop_back();
+        }
+    }
+}
+
+// data_array must be sorted
+template <typename... Ts, typename ElementGetter, typename OnMedianDeviated>
+void medianDeviationDataArray(const data_array_t<Ts...>& data_array, ElementGetter element_getter, OnMedianDeviated on_median_deviated, long double accuracy = 1e-8)
+{
+    long double prev_median = 0.0;
+    long double median = 0.0;
+
+    bool even = true;
+
+    auto array_it = data_array.begin();
+    if (array_it == data_array.end())
+        {
+            return;
+        }
+    auto data_it = array_it->begin();
+
+    while (data_it == array_it->end())
+    {
+        array_it++;
+        if (array_it == data_array.end())
+        {
+            return;
+        }
+        data_it = array_it->begin();
+    }
+
+    auto ac_array_it = array_it;
+    auto ac_data_it = data_it;
+
+    auto _t = element_getter(*data_it);
+    decltype(_t) _k;
+
+    median = _t;
+
+    if (std::abs(median - prev_median) >= accuracy)
+    {
+        on_median_deviated(*ac_data_it);
+    }
+    prev_median = median;
+
+    even = !even;
+    data_it++;
+
+    ac_data_it++;
+    while (ac_data_it == ac_array_it->end())
+    {
+        ac_array_it++;
+        if (ac_array_it == data_array.end())
+        {
+            return;
+        }
+        ac_data_it = ac_array_it->begin();
+    }
+
+    for (; data_it != array_it->end();)
+    {
+        if (even)
+        {
+            _t = _k;
+            median = _t;
+
+            if (std::abs(median - prev_median) >= accuracy)
+            {
+                on_median_deviated(*ac_data_it);
+            }
+            prev_median = median;
+            _k = element_getter(*data_it);
+            ++data_it;
+        }
+        else
+        {
+            _k = element_getter(*data_it);
+            median = (_k + _t) / 2.0;
+            if (std::abs(median - prev_median) >= accuracy)
+            {
+                on_median_deviated(*ac_data_it);
+            }
+            prev_median = median;
+        }
+
+        ac_data_it++;
+        while (ac_data_it == ac_array_it->end())
+        {
+            ac_array_it++;
+            if (ac_array_it == data_array.end())
+            {
+                return;
+            }
+            ac_data_it = ac_array_it->begin();
+        }
+
+        even = !even;
+    }
+    array_it++;
+    for (; array_it != data_array.end(); ++array_it)
+    {
+        for (data_it = array_it->begin(); data_it != array_it->end();)
+        {
+            if (even)
+            {
+                _t = _k;
+                median = _t;
+
+                if (std::abs(median - prev_median) >= accuracy)
+                {
+                    on_median_deviated(*ac_data_it);
+                }
+                prev_median = median;
+                ++data_it;
+            }
+            else
+            {
+                _k = element_getter(*data_it);
+                median = (_k + _t) / 2.0;
+
+                if (std::abs(median - prev_median) >= accuracy)
+                {
+                    on_median_deviated(*ac_data_it);
+                }
+                prev_median = median;
+            }
+
+            ac_data_it++;
+            while (ac_data_it == ac_array_it->end())
+            {
+                ac_array_it++;
+                if (ac_array_it == data_array.end())
+                {
+                    return;
+                }
+                ac_data_it = ac_array_it->begin();
+            }
+            even = !even;
         }
     }
 }

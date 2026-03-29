@@ -161,3 +161,82 @@ TEST(StableSortDataArray, LargeMergeScenario)
     EXPECT_EQ(arr[0], make_data({ 1,50,100,120,150,200 }));
     EXPECT_EQ(arr[1], make_data({ 300,400 }));
 }
+
+TEST(MedianDeviationDataArray, EmptyArrays) {
+    data_array_t<double> empty_data = {};
+    data_array_t<double> empty_sub_arrays = { {}, {}, {} };
+
+    int call_count = 0;
+    auto getter = [](auto v) { return std::get<0>(v); };
+    auto callback = [&](auto) { call_count++; };
+
+    medianDeviationDataArray(empty_data, getter, callback);
+    medianDeviationDataArray(empty_sub_arrays, getter, callback);
+
+    ASSERT_EQ(call_count, 0);
+}
+
+TEST(MedianDeviationDataArray, SingleElement) {
+    data_array_t<double> data = { {42.0} };
+    std::vector<double> deviated_elements;
+
+    // accuracy = 0.0 to make sure the callback triggers (|42.0 - 0.0| >= 0)
+    medianDeviationDataArray(data, [](auto v) { return std::get<0>(v); }, [&](auto v) {
+        deviated_elements.push_back(std::get<0>(v));
+        }, 0.0);
+
+    ASSERT_EQ(deviated_elements.size(), 1);
+    EXPECT_DOUBLE_EQ(deviated_elements[0], 42.0);
+}
+
+// Test 3: Check correct incremental median calculation (output all elements)
+TEST(MedianDeviationDataArray, AccurateMedianCalculation) {
+    data_array_t<double> data = { {0.0, 20.0, 30.0, 40.0, 50.0} };
+    std::vector<double> deviated_elements;
+
+    // With accuracy = 0.0, callback should trigger at every step
+    medianDeviationDataArray(data, [](auto v) { return std::get<0>(v); }, [&](auto v) {
+        deviated_elements.push_back(std::get<0>(v));
+        }, 0.0);
+
+    // Since accuracy = 0.0, callback should trigger for every added element
+    std::vector<double> expected = { 0.0, 20.0, 30.0, 40.0, 50.0 };
+    ASSERT_EQ(deviated_elements, expected);
+}
+
+// Test 4: Check working of the accuracy threshold
+TEST(MedianDeviationDataArray, AccuracyThresholdFiltering) {
+    // Input data: 10, 20, 30, 40, 50
+    data_array_t<double> data = { {10.0, 20.0, 30.0, 40.0, 50.0} };
+    std::vector<double> deviated_elements;
+
+    // Median steps:
+    // 1: (x=10) med = 10. prev = 0.  |10-0| = 10.  10 >= 6 (TRIGGER on 10.0) -> prev becomes 10
+    // 2: (x=20) med = 15. prev = 10. |15-10| = 5.  5 < 6   (IGNORE) -> prev becomes 15
+    // 3: (x=30) med = 20. prev = 15. |20-15| = 5.  5 < 6   (IGNORE) -> prev becomes 20
+    // 4: (x=40) med = 25. prev = 20. |25-20| = 5.  5 < 6   (IGNORE) -> prev becomes 25
+    // 5: (x=50) med = 30. prev = 25. |30-25| = 5.  5 < 6   (IGNORE) -> prev becomes 30
+
+    medianDeviationDataArray(data, [](auto v) { return std::get<0>(v); }, [&](auto v) {
+        deviated_elements.push_back(std::get<0>(v));
+        }, 6.0); // accuracy = 6.0
+
+    ASSERT_EQ(deviated_elements.size(), 1);
+    EXPECT_DOUBLE_EQ(deviated_elements[0], 10.0);
+}
+
+// Test 5: Work with chunked 2D arrays
+TEST(MedianDeviationDataArray, Chunked2DArrays) {
+    // Same array, but split into nested vectors differently,
+    // including empty inner arrays.
+    data_array_t<double> chunked_data = { {0.0, 20.0}, {}, {30.0}, {40.0, 50.0} };
+    std::vector<double> deviated_elements;
+
+    medianDeviationDataArray(chunked_data, [](auto v) { return std::get<0>(v); }, [&](auto v) {
+        deviated_elements.push_back(std::get<0>(v));
+        }, 0.0);
+
+    // Result should be identical to the whole array
+    std::vector<double> expected = { 0.0, 20.0, 30.0, 40.0, 50.0 };
+    ASSERT_EQ(deviated_elements, expected);
+}
