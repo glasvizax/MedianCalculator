@@ -61,11 +61,13 @@ inline typename CsvSetParser<Ts...>::block_array_t CsvSetParser<Ts...>::processC
 {
     block_array_t data_arrays;
     std::mutex data_arrays_mtx;
-    data_arrays.reserve(csv_files.size());
+    data_arrays.resize(csv_files.size());
 
     std::for_each(std::execution::par, csv_files.begin(), csv_files.end(), 
-        [this, &data_arrays, &data_arrays_mtx] (auto& path)
+        [this, &data_arrays, &data_arrays_mtx, &csv_files] (auto& path)
         {
+            size_t current = &path - csv_files.data();
+
             LOG_INFO("Processing CSV file: {}", path.generic_string());
 
             std::ifstream file(path, std::ios_base::binary);
@@ -86,7 +88,7 @@ inline typename CsvSetParser<Ts...>::block_array_t CsvSetParser<Ts...>::processC
                 std::size_t sz;
                 {
                     std::scoped_lock lock(data_arrays_mtx);
-                    data_arrays.push_back(std::move(*data_array));
+                    data_arrays[current] = std::move(*data_array);
                     std::size_t sz = data_arrays.back().size();
                 }
                 LOG_TRACE("Added data array of size {} for file [{}]", sz, path.generic_string());
