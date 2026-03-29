@@ -68,7 +68,7 @@ add_library(
     src/Misc.h 
     src/Misc.cpp
     src/CsvSetParser.h
-
+    src/Algorithms.h
     _toml_impl.cpp
     $<$<BOOL:USE_PCH>:src/default_pch.h>
 )
@@ -182,6 +182,7 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
         test/CsvSetParserTests.cpp
         test/ConfigTests.cpp
         test/MiscTests.cpp
+        test/AlgorithmsTests.cpp
         test/test_main.cpp
     )
 

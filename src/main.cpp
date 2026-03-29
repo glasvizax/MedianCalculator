@@ -18,21 +18,30 @@ namespace fs = std::filesystem;
 int main(int argc, char** argv)
 {
     initDefaultLoggers();
-    
+
     ConfigParams config_params = receiveConfigParams(argc, argv);
     auto csv_files = findMatchingCsvFiles(std::move(config_params));
 
     std::sort(csv_files.begin(), csv_files.end());
-    
-    CsvSetParser<std::string, double> parser({"side", "quantity"});
-    auto data_arrays = parser.processCsvFiles(csv_files);
 
-    for(auto& data : data_arrays)
-    {
-        for (auto [r,p] : data)
-        {
-            std::cout << r << "  " << p << std::endl;
+    CsvSetParser<unsigned long long, double> parser({ "receive_ts", "price" });
+    auto data_array = parser.processCsvFiles(csv_files);
+
+    stableSortDataArray(data_array, 
+        [](auto a, auto b) 
+        { 
+            return std::get<0>(a) < std::get<0>(b); 
         }
-    }
+    );
 
+    for (auto& arr : data_array)
+    {
+        for (auto [r,p] : arr)
+        {
+            std::cout << r << " " << p << std::endl;
+        }
+        std::cout << std::endl;
+    }
 }
+
+
