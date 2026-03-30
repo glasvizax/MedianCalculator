@@ -18,6 +18,8 @@ ConfigParams postProcessConfigParams(ConfigParams params)
 		params.m_output = fs::absolute(params.m_output);
 	}
 
+	params.m_output /= "median_result.csv";
+
 	return params;
 }
 

@@ -3,7 +3,7 @@
 #include "Logging.h"
 #include "Config.h"
 
-std::vector<fs::path> findMatchingCsvFiles(ConfigParams config_params);
+std::vector<fs::path> findMatchingCsvFiles(const ConfigParams& config_params);
 
 bool validateCsvPath(const std::vector<std::string>& masks, const fs::path& file);
 

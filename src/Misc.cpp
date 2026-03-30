@@ -1,6 +1,6 @@
 #include "Misc.h"
 
-std::vector<fs::path> findMatchingCsvFiles(ConfigParams config_params)
+std::vector<fs::path> findMatchingCsvFiles(const ConfigParams& config_params)
 {
     std::error_code errcode;
     bool exist = fs::exists(config_params.m_input, errcode);
