@@ -1,1 +1,1 @@
-cmake -B build -S . -DBoost_DIR="%YOUR_PATH_TO_BoostConfig.cmake%"
+cmake -B build -S . -D Boost_ROOT="path to boost root directory"
