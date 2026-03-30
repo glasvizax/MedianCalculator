@@ -4,6 +4,8 @@
 #include <tuple>
 #include <algorithm>
 
+#include "Logging.h"
+
 template <typename... Ts>
 using data_element_t = std::tuple<Ts...>;
 

@@ -24,8 +24,8 @@ std::optional<ConfigParams> processTomlString(const std::string& toml_str);
 std::optional<ConfigParams> processTomlTable(toml::table tbl);
 
 // if returned nullopt -> error, if returned path is empty -> argument was not passed
-std::optional<fs::path> parseArgvForConfigPath(int argc, const char const* const* argv);
+std::optional<fs::path> parseArgvForConfigPath(int argc, const char* const* argv);
 
-fs::path findTomlConfigFile(int argc, const char const* const* argv);
+fs::path findTomlConfigFile(int argc, const char* const* argv);
 
-ConfigParams receiveConfigParams(int argc, const char const* const* argv);
+ConfigParams receiveConfigParams(int argc, const char* const* argv);

@@ -7,7 +7,7 @@ extern std::shared_ptr<spdlog::logger> g_stderr_logger;
 
 void initDefaultLoggers(spdlog::level::level_enum log_level = spdlog::level::level_enum::info);
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(NDEBUG)
 	#define LOG_TRACE(...) SPDLOG_LOGGER_TRACE(g_stdout_logger, __VA_ARGS__)
 	#define LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(g_stdout_logger, __VA_ARGS__)
 	#define LOG_INFO(...) SPDLOG_LOGGER_INFO(g_stdout_logger, __VA_ARGS__)

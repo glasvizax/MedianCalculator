@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <thread>
+#include <queue>
 
 #include "Logging.h"
 #include "Config.h"

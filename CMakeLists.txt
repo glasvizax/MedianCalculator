@@ -3,8 +3,14 @@ cmake_minimum_required(VERSION 3.23)
 include(FetchContent)
 
 # Enable modern behavior for dependency handling and FetchContent
-cmake_policy(SET CMP0167 NEW)
-cmake_policy(SET CMP0135 NEW)
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 set(CMAKE_POLICY_DEFAULT_CMP0168 NEW)
 
 project(MedianCalculator VERSION 1.0.0 LANGUAGES CXX)
@@ -20,53 +26,58 @@ message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
 
 # --- Output directories ---
 
-set(DEBUG_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/Debug)
-set(RELEASE_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/Release)
+set(BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(DEBUG_BIN_DIR ${BIN_DIR}/Debug)
+set(RELEASE_BIN_DIR ${BIN_DIR}/Release)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DEBUG_BIN_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${RELEASE_BIN_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR})
 
 message(STATUS "Debug output dir: ${DEBUG_BIN_DIR}")
 message(STATUS "Release output dir: ${RELEASE_BIN_DIR}")
 
 # --- Boost configuration (manual discovery) ---
 # NOTE: We force user to provide Boost_ROOT instead of relying on system paths
+if(WIN32)
+    set(Boost_ROOT "" CACHE PATH "path to Boost root dir")
 
-set(Boost_ROOT "" CACHE PATH "path to Boost root dir")
-
-if(NOT Boost_ROOT)
-    message(FATAL_ERROR "Boost_ROOT must be set (e.g. -DBoost_ROOT=/path/to/boost)")
-endif()
-
-message(STATUS "Boost root: ${Boost_ROOT}")
-
-# Try to locate BoostConfig.cmake manually
-list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/BoostConfig.cmake")
-list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/boost-config.cmake")
-list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/Boost.cps")
-list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/boost.cps")
-
-file(GLOB _boost_configs ${_boost_config_paths})
-
-foreach(_config IN LISTS _boost_configs)
-    message(STATUS "Checking Boost config candidate: ${_config}")
-    if(EXISTS ${_config})
-        set(BOOST_CONFIG_FILE ${_config})
-        break()
+    if(NOT Boost_ROOT)
+        message(FATAL_ERROR "Boost_ROOT must be set (e.g. -DBoost_ROOT=/path/to/boost)")
     endif()
-endforeach()
 
-if(NOT BOOST_CONFIG_FILE)
-    message(FATAL_ERROR "Failed to locate Boost config file under Boost_ROOT")
+    message(STATUS "Boost root: ${Boost_ROOT}")
+
+    # Try to locate BoostConfig.cmake manually
+    list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/BoostConfig.cmake")
+    list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/boost-config.cmake")
+    list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/Boost.cps")
+    list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/boost.cps")
+
+    file(GLOB _boost_configs ${_boost_config_paths})
+
+    foreach(_config IN LISTS _boost_configs)
+        message(STATUS "Checking Boost config candidate: ${_config}")
+        if(EXISTS ${_config})
+            set(BOOST_CONFIG_FILE ${_config})
+            break()
+        endif()
+    endforeach()
+
+    if(NOT BOOST_CONFIG_FILE)
+        message(FATAL_ERROR "Failed to locate Boost config file under Boost_ROOT")
+    endif()
+
+    cmake_path(GET BOOST_CONFIG_FILE PARENT_PATH BOOST_CONFIG_PATH)
+
+    set(Boost_DIR ${BOOST_CONFIG_PATH} CACHE INTERNAL "path to Boost config file")
+
+    message(STATUS "Using Boost config: ${BOOST_CONFIG_FILE}")
+
+    find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
+else()
+    find_package(Boost REQUIRED COMPONENTS program_options)
 endif()
-
-cmake_path(GET BOOST_CONFIG_FILE PARENT_PATH BOOST_CONFIG_PATH)
-
-set(Boost_DIR ${BOOST_CONFIG_PATH} CACHE INTERNAL "path to Boost config file")
-
-message(STATUS "Using Boost config: ${BOOST_CONFIG_FILE}")
-
-find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
 
 message(STATUS "Boost::program_options found")
 
@@ -216,8 +227,8 @@ message(STATUS "Main executable configured")
 
 add_custom_target(
     CopyData 
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<IF:$<CONFIG:Debug>,${DEBUG_BIN_DIR},${RELEASE_BIN_DIR}>
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_data_files} $<IF:$<CONFIG:Debug>,${DEBUG_BIN_DIR},${RELEASE_BIN_DIR}> 
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:Main>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_data_files} $<TARGET_FILE_DIR:Main> 
     DEPENDS ${_data_files}
     COMMENT "Copying data files..."
     VERBATIM 
