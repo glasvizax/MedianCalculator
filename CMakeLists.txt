@@ -16,11 +16,39 @@ set(RELEASE_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/Release)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DEBUG_BIN_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${RELEASE_BIN_DIR})
 
-set(Boost_DIR "" CACHE PATH "path to Boost config file")
+set(Boost_ROOT "" CACHE PATH "path to Boost root dir")
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+if(NOT Boost_ROOT)
+    message(FATAL_ERROR "Boost_ROOT must be set")
+endif()
+
+list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/BoostConfig.cmake")
+list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/boost-config.cmake")
+list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/Boost.cps")
+list(APPEND _boost_config_paths "${Boost_ROOT}/lib*/cmake/Boost*/boost.cps")
+
+file(GLOB _boost_configs ${_boost_config_paths})
+
+foreach(_config IN LISTS _boost_configs)
+    message(STATUS "_config = ${_config}")
+    if(EXISTS ${_config})
+        set(BOOST_CONFIG_FILE ${_config})
+        break()
+    endif()
+endforeach()
+
+if(NOT BOOST_CONFIG_FILE)
+    message(FATAL_ERROR "can't find Boost config file")
+endif()
+
+cmake_path(GET BOOST_CONFIG_FILE PARENT_PATH BOOST_CONFIG_PATH)
+
+set(Boost_DIR ${BOOST_CONFIG_PATH} CACHE INTERNAL "path to Boost config file")
 
 find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.fetchcontent")
 
 FetchContent_Declare(
     tomlplusplus
@@ -56,7 +84,7 @@ file(GENERATE OUTPUT _toml_impl.cpp
      ]=]
 )
 
-set(USE_PCH FALSE CACHE BOOL "turn on to use pch")
+set(USE_PCH TRUE CACHE BOOL "turn on to use pch")
 
 add_library(
     Core 
@@ -70,8 +98,15 @@ add_library(
     src/CsvSetParser.h
     src/Algorithms.h
     _toml_impl.cpp
-    $<$<BOOL:USE_PCH>:src/default_pch.h>
 )
+
+if(USE_PCH)
+    target_sources(
+        Core 
+        PRIVATE
+            "src/default_pch.h"
+    )
+endif()
 
 target_link_libraries(
     Core 
@@ -136,6 +171,7 @@ target_precompile_headers(
 
 add_custom_target(
     CopyData 
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<IF:$<CONFIG:Debug>,${DEBUG_BIN_DIR},${RELEASE_BIN_DIR}>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_data_files} $<IF:$<CONFIG:Debug>,${DEBUG_BIN_DIR},${RELEASE_BIN_DIR}> 
     DEPENDS ${_data_files}
     COMMENT "copying all toml files..."
@@ -194,7 +230,6 @@ if(TEST_MedianCalculator AND PROJECT_IS_TOP_LEVEL)
             GTest::gtest
             Core
     )
-
    
     gtest_discover_tests(
         Test

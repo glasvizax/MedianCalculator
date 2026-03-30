@@ -1,4 +1,3 @@
-
 #include <boost/program_options.hpp>
 #include <toml++/toml.hpp>
 
