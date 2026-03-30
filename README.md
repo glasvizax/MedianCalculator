@@ -47,26 +47,23 @@ The processing pipeline is optimized for performance and uses:
 
 ## 3. Build Instructions
 
-### Step 1: Set Boost path
-
-You must provide path to Boost:
 
 ```bash
-cmake -B build -DBoost_ROOT=/path/to/boost
+cmake -B build -S . [-DCMAKE_BUILD_TYPE=YourBuildType]
 ```
 
 ### Step 2: Build
 
 ```bash
-cmake --build build --config <Debug|Release>
+cmake --build build [--config YourConfigType]
 ```
 
 ### Optional: Enable/disable features
 
 ```bash
-- DUSe_PCH=ON/OFF              # Precompiled headers
-- DTEST_MedianCalculator=ON/OFF # Enable or disable tests
-- DTESTS_DROP_LOGGING=ON/OFF # Enable or disable program logging in tests
+- USE_PCH=ON/OFF              	# Precompiled headers
+- TEST_MedianCalculator=ON/OFF # Enable or disable tests
+- TESTS_DROP_LOGGING=ON/OFF 	# Enable or disable program logging in tests
 ```
 
 ---
@@ -76,14 +73,14 @@ cmake --build build --config <Debug|Release>
 ### Basic usage
 
 ```bash
-./Main -cfg config.toml
+./Main -cfg YourConfig.toml
 ```
 
 ### Parameters
 
-| Parameter          | Description                |
-| ------------------ | -------------------------- |
-| `-cfg / -config`   | Path to configuration file |
+| Parameter          | Description                     |
+| ------------------ | ------------------------------- |
+| `-cfg / -config`   | Path to toml configuration file |
 
 ---
 
@@ -114,7 +111,7 @@ output = "./output/"
 ### Input CSV
 
 ```csv
-receive_ts;price
+receive_ts;price;
 1000;10.5
 2000;11.0
 3000;10.8
@@ -140,7 +137,7 @@ To build and run tests:
 ```bash
 cmake -B build -DTEST_MedianCalculator=ON
 cmake --build build
-ctest --test-dir build -C <Debug|Release>
+ctest --test-dir build [-C YourConfigType]
 ```
 
 ---
